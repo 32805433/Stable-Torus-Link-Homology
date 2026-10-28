@@ -1,0 +1,25 @@
+name = "torus_link_homology"
+version = "0.1.0"
+defaultTargets = ["TorusLinkHomology", "DGA", "Generation", "HilbertSeries"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.33.1"
+
+[[lean_lib]]
+name = "TorusLinkHomology"
+globs = ["TorusLinkHomology", "TorusLinkHomology.+"]
+
+[[lean_lib]]
+name = "DGA"
+globs = ["DGA", "DGA.+"]
+
+[[lean_lib]]
+name = "Generation"
+
+[[lean_lib]]
+name = "HilbertSeries"
+
+[[lean_lib]]
+name = "Challenge"

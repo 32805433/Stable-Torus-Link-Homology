@@ -1,0 +1,13 @@
+.lake/
+/proof/
+.DS_Store
+.vscode/
+*.olean
+*.olean.*
+*.ilean
+*.trace
+*.log
+
+# Local manuscript sources and generated documents are not published.
+/ref.bib
+/latexmkrc
