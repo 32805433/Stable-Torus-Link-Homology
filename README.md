@@ -179,7 +179,7 @@ the definitions they reference.
 ## Authorship and license
 
 The Lean formalization and documentation were developed with AI assistance
-through Codex under human direction. Compilation and axiom checks do not
+through Codex and Claude Code under human direction. Compilation and axiom checks do not
 constitute independent human mathematical review.
 
 The repository's own code and documentation are distributed under the

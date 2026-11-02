@@ -122,22 +122,6 @@ def alternatingDeficitCoefficient {q : ℕ} (L j D : ℕ)
   ∑ i : Fin q → Fin L,
     if j + ∑ a : Fin q, (i a).val = D then oddTupleTerm c A (fun a => (i a).val) else 0
 
-/-- All positive deficits of the even factor vanish in the selected
-coefficient. Thus no unwanted even coefficient can survive. -/
-theorem alternatingDeficitCoefficient_eq_zero_of_pos {q : ℕ} (k L j : ℕ)
-    (T : Finset ℕ) (hT : T ⊆ Finset.range k) (hq : q = T.card)
-    (c : Fin q → ℕ → R) (A : ℕ → M)
-    (hc : ∀ a t, t < k → t ∉ T → c a t = 0) (hj : 0 < j) :
-    alternatingDeficitCoefficient L j (∑ t ∈ T, t) c A = 0 := by
-  apply Finset.sum_eq_zero
-  intro i _
-  split_ifs with hdeficit
-  · by_contra hne
-    have h := oddTupleTerm_support_of_ne_zero k j T hT hq c A hc
-      (fun a => (i a).val) hdeficit hne
-    omega
-  · rfl
-
 /-- Finite multilinearity gives the ordered exterior coefficient expansion. -/
 theorem iotaMulti_sum_eq_sum_oddTupleTerm {q : ℕ} (L : ℕ)
     (c : Fin q → ℕ → R) (A : ℕ → M) :
@@ -245,131 +229,10 @@ theorem sum_selected_eq_ordered {q : ℕ} (L : ℕ) (T : Finset ℕ)
   rw [Finset.sum_image]
   exact fun a _ b _ h => (T.orderEmbOfFin hq.symm).injective h
 
-/-- ET-06/07: the exact finite coefficient is the selected determinant
-multiplying the increasingly ordered exterior product. -/
-theorem alternatingDeficitCoefficient_eq_det {q : ℕ} (k L : ℕ)
-    (T : Finset ℕ) (hT : T ⊆ Finset.range k) (hq : q = T.card)
-    (hTL : T ⊆ Finset.range L) (c : Fin q → ℕ → R) (A : ℕ → M)
-    (hc : ∀ a t, t < k → t ∉ T → c a t = 0) :
-    alternatingDeficitCoefficient L 0 (∑ t ∈ T, t) c A =
-      (Matrix.of (fun a j : Fin q => c a (T.orderEmbOfFin hq.symm j))).det •
-        ExteriorAlgebra.ιMulti R q (fun j => A (T.orderEmbOfFin hq.symm j)) := by
-  rw [alternatingDeficitCoefficient_eq_selected k L T hT hq c A hc]
-  have hs (a : Fin q) :
-      (∑ t : Fin L, (if t.val ∈ T then c a t.val else 0) • A t.val) =
-        ∑ j : Fin q, c a (T.orderEmbOfFin hq.symm j) •
-          A (T.orderEmbOfFin hq.symm j) := by
-    simp_rw [ite_smul, zero_smul]
-    exact sum_selected_eq_ordered L T hq hTL (fun t => c a t • A t)
-  simp_rw [hs]
-  exact iotaMulti_linear_combinations _ _
-
-/-- The finite coefficient of the signed deletion expression: `e` gives the
-even-factor coefficients and `c` gives the scalar weights of odd factors. -/
-def deletionDeficitCoefficient {q : ℕ} (L J D : ℕ)
-    (e c : Fin (q + 1) → ℕ → R) (A : ℕ → M) : ExteriorAlgebra R M :=
-  ∑ a : Fin (q + 1), ∑ j : Fin (J + 1),
-    ((-1 : R) ^ a.val * e a j.val) •
-      alternatingDeficitCoefficient L j.val D (fun b => c (a.succAbove b)) A
-
-/-- The selected matrix has the surviving even coefficient in column zero,
-followed by the selected odd coefficients in increasing order. -/
-def selectedMatrix {q : ℕ} (T : Finset ℕ) (hq : q = T.card)
-    (e c : Fin (q + 1) → ℕ → R) : Matrix (Fin (q + 1)) (Fin (q + 1)) R :=
-  fun a => Fin.cons (e a 0) (fun j => c a (T.orderEmbOfFin hq.symm j))
-
-/-- ET-07: first-column expansion gives exactly the signed deletion order.
-All positive even deficits and all unselected odd indices have vanished. -/
-theorem deletionDeficitCoefficient_eq_det {q : ℕ} (k L J : ℕ)
-    (T : Finset ℕ) (hT : T ⊆ Finset.range k) (hq : q = T.card)
-    (hTL : T ⊆ Finset.range L) (e c : Fin (q + 1) → ℕ → R) (A : ℕ → M)
-    (hc : ∀ a t, t < k → t ∉ T → c a t = 0) :
-    deletionDeficitCoefficient L J (∑ t ∈ T, t) e c A =
-      (selectedMatrix T hq e c).det •
-        ExteriorAlgebra.ιMulti R q (fun j => A (T.orderEmbOfFin hq.symm j)) := by
-  unfold deletionDeficitCoefficient
-  have hj (a : Fin (q + 1)) :
-      (∑ j : Fin (J + 1), ((-1 : R) ^ a.val * e a j.val) •
-        alternatingDeficitCoefficient L j.val (∑ t ∈ T, t)
-          (fun b => c (a.succAbove b)) A) =
-      ((-1 : R) ^ a.val * e a 0) •
-        alternatingDeficitCoefficient L 0 (∑ t ∈ T, t)
-          (fun b => c (a.succAbove b)) A := by
-    apply Fintype.sum_eq_single (0 : Fin (J + 1))
-    intro j hj
-    have hjpos : 0 < j.val := Nat.pos_of_ne_zero (fun h => hj (Fin.ext h))
-    rw [alternatingDeficitCoefficient_eq_zero_of_pos k L j.val T hT hq _ A
-      (fun b => hc (a.succAbove b)) hjpos, smul_zero]
-  simp_rw [hj, alternatingDeficitCoefficient_eq_det k L T hT hq hTL _ A
-    (fun b => hc (_))]
-  rw [Matrix.det_succ_column_zero, Finset.sum_smul]
-  apply Finset.sum_congr rfl
-  intro a _
-  rw [smul_smul]
-  rfl
-
-/-- A common factor in the even coefficient scales only column zero. -/
-theorem selectedMatrix_det_even_mul {q : ℕ} (T : Finset ℕ) (hq : q = T.card)
-    (e c : Fin (q + 1) → ℕ → R) (v : ℕ → R) :
-    (selectedMatrix T hq (fun a j => v j * e a j) c).det =
-      v 0 * (selectedMatrix T hq e c).det := by
-  have hmat : selectedMatrix T hq (fun a j => v j * e a j) c =
-      (selectedMatrix T hq e c).updateCol 0
-        (v 0 • fun a => selectedMatrix T hq e c a 0) := by
-    ext a j
-    induction j using Fin.cases with
-    | zero => simp [selectedMatrix]
-    | succ j => simp [selectedMatrix]
-  rw [hmat, Matrix.det_updateCol_smul]
-  simp
-
-/-- A series of scalar coefficients inside the exterior algebra. -/
-def scalarSeries (e : ℕ → R) : PowerSeries (ExteriorAlgebra R M) :=
-  PowerSeries.mk fun j => algebraMap R (ExteriorAlgebra R M) (e j)
-
 /-- The odd coefficient series with scalar Euler weights. -/
 def weightedOddSeries (c : ℕ → R) (A : ℕ → M) :
     PowerSeries (ExteriorAlgebra R M) :=
   PowerSeries.mk fun t => ExteriorAlgebra.ι R (c t • A t)
-
-/-- The noncommutative power-series convolution is exactly the finite
-alternating deficit sum. No completion of the coefficient algebra is used. -/
-theorem coeff_scalar_mul_weightedProduct {q : ℕ} (e : ℕ → R)
-    (c : Fin q → ℕ → R) (A : ℕ → M) (D L : ℕ) (hDL : D < L) :
-    (scalarSeries (M := M) e *
-      (List.ofFn (fun a => weightedOddSeries (c a) A)).prod).coeff D =
-      ∑ j : Fin L, e j.val • alternatingDeficitCoefficient L j.val D c A := by
-  rw [CoefficientSeries.coeff_mul_orderedProduct_eq_sum_fin _ _ D L hDL]
-  have hprod (i : Fin q → Fin L) :
-      (List.ofFn (fun a => (weightedOddSeries (c a) A).coeff (i a).val)).prod =
-        oddTupleTerm c A (fun a => (i a).val) := by
-    simp only [weightedOddSeries, PowerSeries.coeff_mk]
-    rw [← ExteriorAlgebra.ιMulti_apply]
-    exact (ExteriorAlgebra.ιMulti R q).map_smul_univ
-      (fun a => c a (i a).val) (fun a => A (i a).val)
-  simp_rw [hprod]
-  apply Finset.sum_congr rfl
-  intro j _
-  rw [alternatingDeficitCoefficient, Finset.smul_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  split_ifs <;> simp [scalarSeries, Algebra.smul_def]
-
-/-- The signed deletion expression as an actual ordered power series. -/
-def deletionSeries {q : ℕ} (e c : Fin (q + 1) → ℕ → R) (A : ℕ → M) :
-    PowerSeries (ExteriorAlgebra R M) :=
-  ∑ a : Fin (q + 1), ((-1 : R) ^ a.val) •
-    (scalarSeries (M := M) (e a) *
-      (List.ofFn (fun b => weightedOddSeries (c (a.succAbove b)) A)).prod)
-
-/-- Coefficient extraction for the actual signed deletion power series. -/
-theorem coeff_deletionSeries {q : ℕ} (e c : Fin (q + 1) → ℕ → R)
-    (A : ℕ → M) (D : ℕ) :
-    (deletionSeries e c A).coeff D =
-      deletionDeficitCoefficient (D + 1) D D e c A := by
-  simp only [deletionSeries, map_sum, PowerSeries.coeff_smul,
-    coeff_scalar_mul_weightedProduct _ _ _ D (D + 1) (Nat.lt_succ_self D),
-    Finset.smul_sum, smul_smul, deletionDeficitCoefficient]
 
 end AlternatingTerms
 
@@ -459,60 +322,9 @@ theorem det_eulerSelectorMatrix_eq_transferScalar {q : ℕ} (b : ℤ) (m k : ℕ
   rw [← hfall]
   ring
 
-/-- The selected determinant never vanishes in the actual exceptional
-range, including the boundary cutoff `k=m<N`. -/
-theorem det_eulerSelectorMatrix_ne_zero {q : ℕ} (b : ℤ) (m k : ℕ)
-    (T : Finset ℕ) (hT : T ⊆ Finset.range k) (hq : q = T.card) (hkm : k ≤ m) :
-    (eulerSelectorMatrix (selector b k T) b (b - m) T hq).det ≠ 0 := by
-  rw [det_eulerSelectorMatrix_eq_transferScalar b m k T hT hq]
-  exact transferScalar_ne_zero m k T hkm
-
 section RationalAlgebra
 
 variable {R M : Type*} [CommRing R] [Algebra ℚ R] [AddCommGroup M] [Module R M]
-
-/-- Scalar extension of the selected matrix preserves its determinant. -/
-theorem selectedMatrix_euler_det {q : ℕ} (p : Polynomial ℚ) (b ell : ℤ)
-    (T : Finset ℕ) (hq : q = T.card) :
-    (selectedMatrix T hq
-      (fun a t => algebraMap ℚ R (eulerWeight p ell a.val t))
-      (fun a t => algebraMap ℚ R (eulerWeight p b a.val t))).det =
-      algebraMap ℚ R (eulerSelectorMatrix p b ell T hq).det := by
-  rw [RingHom.map_det]
-  congr 1
-  ext a j
-  induction j using Fin.cases with
-  | zero => simp [selectedMatrix, eulerSelectorMatrix, selectedEigenvalues, eulerWeight]
-  | succ j => simp [selectedMatrix, eulerSelectorMatrix, selectedEigenvalues, eulerWeight]
-
-/-- ET-05--07 in explicit finite coefficients, over any rational algebra.
-The coefficient is a single ordered exterior monomial, multiplied by the
-Euler-selector determinant and the leading even coefficient. -/
-theorem selector_deletion_coefficient {q : ℕ} (b ell : ℤ) (k L J : ℕ)
-    (T : Finset ℕ) (hT : T ⊆ Finset.range k) (hq : q = T.card)
-    (hTL : T ⊆ Finset.range L) (v : ℕ → R) (A : ℕ → M) :
-    deletionDeficitCoefficient (q := q) L J (∑ t ∈ T, t)
-      (fun a j => v j * algebraMap ℚ R (eulerWeight (selector b k T) ell a.val j))
-      (fun a t => algebraMap ℚ R (eulerWeight (selector b k T) b a.val t)) A =
-    (v 0 * algebraMap ℚ R (eulerSelectorMatrix (selector b k T) b ell T hq).det) •
-      ExteriorAlgebra.ιMulti R q (fun j => A (T.orderEmbOfFin hq.symm j)) := by
-  rw [deletionDeficitCoefficient_eq_det k L J T hT hq hTL]
-  · rw [selectedMatrix_det_even_mul, selectedMatrix_euler_det]
-  · intro a t ht htT
-    simp only [eulerWeight, eval_selector_eq_zero b k t T ht htT, mul_zero, map_zero]
-
-/-- The selected coefficient with the determinant fully simplified. -/
-theorem selector_deletion_coefficient_transferScalar {q : ℕ} (b : ℤ) (m k L J : ℕ)
-    (T : Finset ℕ) (hT : T ⊆ Finset.range k) (hq : q = T.card)
-    (hTL : T ⊆ Finset.range L) (v : ℕ → R) (A : ℕ → M) :
-    deletionDeficitCoefficient (q := q) L J (∑ t ∈ T, t)
-      (fun a j => v j * algebraMap ℚ R
-        (eulerWeight (selector b k T) (b - m) a.val j))
-      (fun a t => algebraMap ℚ R (eulerWeight (selector b k T) b a.val t)) A =
-    (v 0 * algebraMap ℚ R (transferScalar m k T)) •
-      ExteriorAlgebra.ιMulti R q (fun j => A (T.orderEmbOfFin hq.symm j)) := by
-  rw [selector_deletion_coefficient b (b - m) k L J T hT hq hTL,
-    det_eulerSelectorMatrix_eq_transferScalar b m k T hT hq]
 
 /-- Euler-selector weights are the actual eigenvalues of the iterated
 shifted Euler operator, also after changing the coefficient ring. -/
@@ -527,18 +339,6 @@ theorem coeff_iterate_evalEuler_map {E : Type*} [Ring E] [Algebra R E]
       algebraMap ℚ R ((b : ℚ) - (t : ℚ)) := by simp
   rw [hcast, Polynomial.eval_map_apply, ← map_pow, ← map_mul]
   rfl
-
-/-- Euler operations on the even series have the scalar coefficients used
-in the finite coefficient theorem. -/
-theorem iterate_evalEuler_scalarSeries (p : Polynomial ℚ) (b : ℤ) (a : ℕ)
-    (v : ℕ → R) :
-    ((CoefficientSeries.shiftedEuler b)^[a])
-      (CoefficientSeries.evalEuler (p.map (algebraMap ℚ R)) b (scalarSeries (M := M) v)) =
-      scalarSeries (M := M) (fun t => v t * algebraMap ℚ R (eulerWeight p b a t)) := by
-  ext t
-  rw [coeff_iterate_evalEuler_map]
-  simp only [scalarSeries, PowerSeries.coeff_mk, Algebra.smul_def]
-  rw [← map_mul, mul_comm]
 
 /-- Euler operations on the odd series preserve its exterior degree one. -/
 theorem iterate_evalEuler_weightedOddSeries (p : Polynomial ℚ) (b : ℤ) (a : ℕ)
@@ -561,47 +361,6 @@ def eulerDeletionSeries (q : ℕ) (p : Polynomial ℚ) (b ell : ℤ)
       (List.ofFn (fun j : Fin q =>
         ((CoefficientSeries.shiftedEuler b)^[(a.succAbove j).val])
           (CoefficientSeries.evalEuler (p.map (algebraMap ℚ R)) b C))).prod)
-
-/-- The formal Euler deletion expression agrees with the coefficient model. -/
-theorem eulerDeletionSeries_eq_deletionSeries (q : ℕ) (p : Polynomial ℚ) (b ell : ℤ)
-    (v : ℕ → R) (A : ℕ → M) :
-    eulerDeletionSeries q p b ell (scalarSeries v) (weightedOddSeries (fun _ => 1) A) =
-      deletionSeries (q := q)
-        (fun a j => v j * algebraMap ℚ R (eulerWeight p ell a.val j))
-        (fun a t => algebraMap ℚ R (eulerWeight p b a.val t)) A := by
-  simp only [eulerDeletionSeries, deletionSeries,
-    iterate_evalEuler_scalarSeries, iterate_evalEuler_weightedOddSeries]
-
-/-- ET-05--07 for an actual power series: the selected coefficient is the
-transfer scalar times the leading even coefficient and the selected
-odd factors in increasing order. -/
-theorem selector_deletionSeries_coeff {q : ℕ} (b : ℤ) (m k : ℕ)
-    (T : Finset ℕ) (hT : T ⊆ Finset.range k) (hq : q = T.card)
-    (v : ℕ → R) (A : ℕ → M) :
-    (deletionSeries (q := q)
-      (fun a j => v j * algebraMap ℚ R
-        (eulerWeight (selector b k T) (b - m) a.val j))
-      (fun a t => algebraMap ℚ R (eulerWeight (selector b k T) b a.val t)) A).coeff
-        (∑ t ∈ T, t) =
-    (v 0 * algebraMap ℚ R (transferScalar m k T)) •
-      ExteriorAlgebra.ιMulti R q (fun j => A (T.orderEmbOfFin hq.symm j)) := by
-  rw [coeff_deletionSeries]
-  apply selector_deletion_coefficient_transferScalar b m k _ _ T hT hq
-  intro t ht
-  apply Finset.mem_range.mpr
-  exact Nat.lt_succ_of_le (Finset.single_le_sum (fun i _ => Nat.zero_le i) ht)
-
-/-- ET-05--07 directly for the polynomial in the Euler operator occurring
-in the transfer identity. All factors and signs are before homology. -/
-theorem eulerDeletionSeries_selector_coeff {q : ℕ} (b : ℤ) (m k : ℕ)
-    (T : Finset ℕ) (hT : T ⊆ Finset.range k) (hq : q = T.card)
-    (v : ℕ → R) (A : ℕ → M) :
-    (eulerDeletionSeries q (selector b k T) b (b - m)
-      (scalarSeries v) (weightedOddSeries (fun _ => 1) A)).coeff (∑ t ∈ T, t) =
-    (v 0 * algebraMap ℚ R (transferScalar m k T)) •
-      ExteriorAlgebra.ιMulti R q (fun j => A (T.orderEmbOfFin hq.symm j)) := by
-  rw [eulerDeletionSeries_eq_deletionSeries]
-  exact selector_deletionSeries_coeff b m k T hT hq v A
 
 end RationalAlgebra
 

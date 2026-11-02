@@ -108,32 +108,6 @@ theorem jetExpression_mem_coeffSubalgebra {K : Type*} [CommRing K] [Algebra K E]
   exact Subalgebra.mul_mem _ (hc s)
     (orderedEulerProduct_mem_coeffSubalgebra S (N + 1) b P s hP)
 
-/-- All coefficients of a scalar-valued jet substitution lie in any
-subalgebra containing the coefficients of the original even series. -/
-theorem evenJetMap_mem_coeffSubalgebra [Algebra ℚ E] [IsScalarTower ℚ R E]
-    (S : Subalgebra ℚ E) (n : ℕ) (b : ℤ) (U : PowerSeries R)
-    (hU : PowerSeries.map (algebraMap R E) U ∈ PowerSeries.coeffSubalgebra S)
-    (a : TorusLinkHomology.R n) :
-    PowerSeries.map (algebraMap R E) (evenJetMap n b U a) ∈
-      PowerSeries.coeffSubalgebra S := by
-  induction a using MvPolynomial.induction_on with
-  | C a =>
-    rw [evenJetMap_C, PowerSeries.algebraMap_apply, PowerSeries.map_C,
-      ← IsScalarTower.algebraMap_apply ℚ R E]
-    simpa only [PowerSeries.algebraMap_apply] using
-      (PowerSeries.coeffSubalgebra S).algebraMap_mem a
-  | add a b ha hb =>
-    simp only [map_add]
-    exact (PowerSeries.coeffSubalgebra S).add_mem ha hb
-  | mul_X a j ha =>
-    simp only [map_mul, evenJetMap_X]
-    apply (PowerSeries.coeffSubalgebra S).mul_mem ha
-    intro t
-    rw [PowerSeries.coeff_map, CoefficientSeries.coeff_hasseEuler,
-      Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply ℚ R E,
-      ← Algebra.smul_def]
-    exact S.smul_mem (hU t) _
-
 /-- The even coefficient ring is contained in every algebra of cycles or
 tail-generated representatives over that ring. -/
 theorem jetExpression_coeff_mem (S : Subalgebra R E) (N : ℕ)
@@ -144,43 +118,6 @@ theorem jetExpression_coeff_mem (S : Subalgebra R E) (N : ℕ)
   intro s i
   rw [PowerSeries.coeff_map]
   exact S.algebraMap_mem _
-
-private theorem iterate_shiftedEuler_neg (b : ℤ) (k : ℕ) (P : PowerSeries E) :
-    (CoefficientSeries.shiftedEuler b)^[k] (-P) =
-      -((CoefficientSeries.shiftedEuler b)^[k] P) := by
-  ext t : 1
-  simp only [CoefficientSeries.coeff_iterate_shiftedEuler, map_neg, smul_neg]
-
-private theorem list_prod_neg (l : List (PowerSeries E)) :
-    (l.map Neg.neg).prod = ((-1 : ℤ) ^ l.length) • l.prod := by
-  induction l with
-  | nil => simp
-  | cons f l ih =>
-    simp only [List.map_cons, List.prod_cons, List.length_cons, ih, pow_succ,
-      mul_smul_comm, neg_mul, smul_neg, mul_neg, mul_one, neg_smul]
-
-theorem orderedEulerProduct_neg (n : ℕ) (b : ℤ) (P : PowerSeries E)
-    (s : Finset (Fin n)) :
-    orderedEulerProduct n b (-P) s = ((-1 : ℤ) ^ s.card) • orderedEulerProduct n b P s := by
-  unfold orderedEulerProduct
-  simp only [iterate_shiftedEuler_neg]
-  have h := list_prod_neg
-    (s.sort.map (fun j => (CoefficientSeries.shiftedEuler b)^[j.val - 1] P))
-  simpa only [List.map_map, Function.comp_def, List.length_map, Finset.length_sort] using h
-
-/-- Exterior degree q gives the exact sign under replacement P ↦ −P. -/
-theorem jetExpression_neg (N q : ℕ)
-    (c : Finset (Fin (N + 1)) → TorusLinkHomology.R (N + 1))
-    (hc : ∀ s, s.card ≠ q → c s = 0)
-    (r b : ℤ) (U : PowerSeries R) (P : PowerSeries E) :
-    jetExpression N c r b U (-P) = ((-1 : ℤ) ^ q) • jetExpression N c r b U P := by
-  unfold jetExpression
-  rw [Finset.smul_sum]
-  apply Finset.sum_congr rfl
-  intro s _
-  by_cases hs : s.card = q
-  · rw [orderedEulerProduct_neg, hs, mul_smul_comm]
-  · simp only [hc s hs, map_zero, zero_mul, smul_zero]
 
 theorem map_orderedEulerProduct {F : Type*} [Ring F] (f : E →+* F)
     (n : ℕ) (b : ℤ) (P : PowerSeries E) (s : Finset (Fin n)) :

@@ -12,7 +12,7 @@ namespace TorusLinkHomology.CoefficientComplex
 theorem hilbert_tailGeneration (N : ℕ) (hN : 0 < N) (r ell : ℕ) :
     TailGeneration N r ell :=
   tailGeneration_of_all_exceptionalTransfers N hN
-    (fun r ell hm => exceptionalTransfers_of_continuation N r ell hN hm) r ell
+    (fun r ell hm => exceptionalTransfers N r ell hN hm) r ell
 
 /-- Every old cycle lifts modulo a boundary to a new cycle. -/
 theorem comparison_cycle_lift (N r ell : ℕ) (hN : 0 < N)

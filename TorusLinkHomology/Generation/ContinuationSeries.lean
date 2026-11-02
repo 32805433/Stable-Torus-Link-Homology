@@ -1,4 +1,4 @@
-import TorusLinkHomology.Generation.UniversalTransferCycles
+import TorusLinkHomology.Generation.CoefficientSeries
 import DGA.PowerSeriesAlgebra
 
 /-!
@@ -16,6 +16,44 @@ noncomputable section
 open scoped BigOperators
 
 namespace TorusLinkHomology.CoefficientSeries
+
+section Expression
+
+variable {B : Type*} [Ring B]
+
+/-- The Euler expression with explicit upper exponents for both inputs. -/
+def expression (N : ℕ) (r b : ℤ) (U F : PowerSeries B) : PowerSeries B :=
+  U * shiftedEuler b F - N • (shiftedEuler r U * F)
+
+end Expression
+
+section CommRing
+
+variable {K : Type*} [CommRing K]
+
+/-- Euler's power rule in upper-exponent notation. -/
+theorem shiftedEuler_pow_succ (F : PowerSeries K) (b : ℤ) (N : ℕ) :
+    shiftedEuler (((N + 1 : ℕ) : ℤ) * b) (F ^ (N + 1)) =
+      (N + 1) • (shiftedEuler b F * F ^ N) := by
+  induction N with
+  | zero => simp [shiftedEuler]
+  | succ N ih =>
+    rw [show ((N + 1 + 1 : ℕ) : ℤ) * b = ((N + 1 : ℕ) : ℤ) * b + b by push_cast; ring,
+      pow_succ, shiftedEuler_mul, ih]
+    simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, pow_succ]
+    ring
+
+/-- The Euler expression annihilates the N-th power of its first input. -/
+theorem expression_pow (N : ℕ) (b : ℤ) (F : PowerSeries K) :
+    expression N b ((N : ℤ) * b) F (F ^ N) = 0 := by
+  cases N with
+  | zero => simp [expression, shiftedEuler]
+  | succ N =>
+    rw [expression, shiftedEuler_pow_succ]
+    simp only [nsmul_eq_mul, pow_succ]
+    ring
+
+end CommRing
 
 /-- The Euler expression at matching upper exponents, written coefficientwise. -/
 theorem coeff_expression {B : Type*} [Ring B] (N : ℕ) (r b : ℤ) (hb : b = (N : ℤ) * r)

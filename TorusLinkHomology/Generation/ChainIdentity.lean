@@ -1,7 +1,7 @@
 import TorusLinkHomology.Generation.ContinuationTail
 import TorusLinkHomology.Generation.SelectorBoundary
 import TorusLinkHomology.Generation.JetSeriesSpecialization
-import TorusLinkHomology.Generation.UniversalTransferConclusion
+import TorusLinkHomology.Generation.ExceptionalGeneration
 import Mathlib.Algebra.CharP.Algebra
 
 /-!
@@ -22,7 +22,58 @@ namespace TorusLinkHomology.CoefficientComplex
 
 namespace Continuation
 
-open CoefficientSeries CoefficientSelector UniversalTransferSpecialization
+open CoefficientSeries CoefficientSelector
+
+/-- The actual natural-number deficit set of a finite family of bounded indices. -/
+def deficitSet {k : ℕ} (s : Finset (Fin k)) : Finset ℕ := s.image Fin.val
+
+@[simp] theorem card_deficitSet {k : ℕ} (s : Finset (Fin k)) :
+    (deficitSet s).card = s.card := Finset.card_image_of_injective s Fin.val_injective
+
+theorem deficitSet_subset_range {k : ℕ} (s : Finset (Fin k)) :
+    deficitSet s ⊆ Finset.range k := by
+  rintro t ht
+  obtain ⟨j, _, rfl⟩ := Finset.mem_image.mp ht
+  exact Finset.mem_range.mpr j.isLt
+
+theorem card_deficitSet_le {k : ℕ} (s : Finset (Fin k)) : (deficitSet s).card ≤ k := by
+  simpa only [Finset.card_range] using Finset.card_le_card (deficitSet_subset_range s)
+
+/-- Taking values of the increasing bounded enumeration preserves its order exactly. -/
+theorem orderEmbOfFin_deficitSet {k q : ℕ} (s : Finset (Fin k)) (hs : s.card = q) :
+    (fun i => (s.orderEmbOfFin hs i).val) =
+      (deficitSet s).orderEmbOfFin ((card_deficitSet s).trans hs) := by
+  apply Finset.orderEmbOfFin_unique
+  · intro i
+    exact Finset.mem_image.mpr ⟨s.orderEmbOfFin hs i, s.orderEmbOfFin_mem hs i, rfl⟩
+  · intro i j hij
+    exact (s.orderEmbOfFin hs).strictMono hij
+
+/-- The exceptional selector has degree k minus the size of the selected set. -/
+theorem natDegree_selector_deficitSet {k : ℕ} (b : ℤ) (s : Finset (Fin k)) :
+    (CoefficientSelector.selector b k (deficitSet s)).natDegree = k - s.card := by
+  rw [CoefficientSelector.natDegree_selector_of_subset b k _ (deficitSet_subset_range s),
+    card_deficitSet]
+
+theorem natDegree_selector_add_card {k : ℕ} (b : ℤ) (s : Finset (Fin k)) :
+    (CoefficientSelector.selector b k (deficitSet s)).natDegree + s.card = k := by
+  rw [natDegree_selector_deficitSet]
+  apply Nat.sub_add_cancel
+  simpa only [card_deficitSet] using card_deficitSet_le s
+
+/-- The transfer coefficient of every actual exceptional subset is a nonzero rational number. -/
+theorem exceptional_transferScalar_ne_zero (N r ell : ℕ)
+    (s : Finset (Fin (exceptionalCount N r ell))) :
+    CoefficientSelector.transferScalar (N * (r + 1) - (ell + 1))
+      (exceptionalCount N r ell) (deficitSet s) ≠ 0 :=
+  CoefficientSelector.transferScalar_ne_zero _ _ _ (Nat.min_le_right _ _)
+
+/-- The finite span of designated tails is contained in the tail algebra. -/
+theorem finiteTailSpan_le_tailSubalgebra (N r ell : ℕ) (hell : ell < N * r) :
+    finiteTailSpan N r ell ≤ (tailSubalgebra N r ell).toSubmodule := by
+  apply Submodule.span_le.mpr
+  rintro a ⟨j, hj, _, rfl⟩
+  exact tail_mem_tailSubalgebra N r ell j (hell.trans hj) hj
 
 variable (N r ell : ℕ) (F : Type*) [Field F] [Algebra (R (r + 1)) F]
 
@@ -217,7 +268,7 @@ end Continuation
 
 /-- Exceptional products transfer into the tail algebra, by the continuation of
 the tail recurrence over the fraction field. -/
-theorem exceptionalTransfers_of_continuation (N r ell : ℕ) (hN : 0 < N)
+theorem exceptionalTransfers (N r ell : ℕ) (hN : 0 < N)
     (hm : ell + 1 < N * (r + 1)) : ExceptionalTransfers N r ell := by
   have : CharZero (FractionRing (R (r + 1))) := algebraRat.charZero _
   apply exceptionalTransfers_of_representatives N r ell hm

@@ -68,22 +68,4 @@ theorem coeff_orderedProduct_eq_sum_fin {q : ℕ} (f : Fin q → PowerSeries A)
   · intro i _
     rfl
 
-/-- A separate leading factor has its own deficit; every other factor stays
-in its original order. -/
-theorem coeff_mul_orderedProduct_eq_sum_fin {q : ℕ} (v : PowerSeries A)
-    (f : Fin q → PowerSeries A) (D L : ℕ) (hDL : D < L) :
-    (v * (List.ofFn f).prod).coeff D =
-      ∑ j : Fin L, ∑ i : Fin q → Fin L,
-        if j.val + ∑ a : Fin q, (i a).val = D then
-          v.coeff j.val * (List.ofFn (fun a => (f a).coeff (i a).val)).prod else 0 := by
-  have h := coeff_orderedProduct_eq_sum_fin (Fin.cons v f) D L hDL
-  simp only [List.ofFn_succ, Fin.cons_zero, Fin.cons_succ, List.prod_cons] at h
-  rw [h, ← (Fin.consEquiv (fun _ : Fin (q + 1) => Fin L)).sum_comp]
-  rw [Fintype.sum_prod_type]
-  apply Finset.sum_congr rfl
-  intro j _
-  apply Finset.sum_congr rfl
-  intro i _
-  simp only [Fin.consEquiv_apply, Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ]
-
 end TorusLinkHomology.CoefficientSeries

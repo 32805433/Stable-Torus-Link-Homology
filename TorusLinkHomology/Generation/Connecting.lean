@@ -115,4 +115,14 @@ theorem exists_connectingRepresentative_iff (N r ell : ℕ) (z : A (r + 1)) :
     rw [p_J, p_d] at h
     exact neg_eq_zero.mp h.symm
 
+/-- The empty-product connecting class is represented by the missing equation. -/
+theorem connecting_empty_product (N r ell : ℕ) :
+    ConnectingRepresentative N r ell 1
+      (algebraMap (R (r + 1)) (A (r + 1)) (G N (r + 1) (ell + 1))) := by
+  refine ⟨xi (r + 1) 0, ?_, ?_⟩
+  · rw [p, xi, CliffordAlgebra.contractLeft_ι, dropFirst_algebraMap]
+    simp [firstCoordinate]
+  · rw [AlgHom.commutes, d_xi]
+    simp
+
 end TorusLinkHomology.CoefficientComplex

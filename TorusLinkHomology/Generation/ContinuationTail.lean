@@ -1,5 +1,7 @@
 import TorusLinkHomology.Generation.ContinuationSeries
 import TorusLinkHomology.Generation.ContinuationBaseChange
+import TorusLinkHomology.Generation.TailSeries
+import TorusLinkHomology.Generation.Comparison
 
 /-!
 # Continuing the tail recurrence below the offset
@@ -18,9 +20,91 @@ open scoped BigOperators
 
 namespace TorusLinkHomology.CoefficientComplex
 
-open CoefficientSeries UniversalTransferSpecialization
+open CoefficientSeries
 
 namespace Continuation
+
+/-- Coefficients in decreasing exponent order, zero beyond the upper bound. -/
+def reversedCoeff {B : Type*} [Semiring B] (b : ℕ) (p : Polynomial B) (i : ℕ) : B :=
+  if i ≤ b then p.coeff (b - i) else 0
+
+theorem coeff_reflect_of_degree_le {B : Type*} [Semiring B] (b : ℕ) (p : Polynomial B)
+    (hp : p.natDegree ≤ b) (i : ℕ) : (p.reflect b).coeff i = reversedCoeff b p i := by
+  rw [Polynomial.coeff_reflect, reversedCoeff]
+  split_ifs with hi
+  · rw [Polynomial.revAt_le hi]
+  · rw [Polynomial.revAt_eq_self_of_lt (Nat.lt_of_not_ge hi)]
+    exact Polynomial.coeff_eq_zero_of_natDegree_lt (hp.trans_lt (Nat.lt_of_not_ge hi))
+
+theorem reflect_pow_of_degree_le {B : Type*} [Semiring B]
+    (p : Polynomial B) (b N : ℕ) (hp : p.natDegree ≤ b) :
+    (p ^ N).reflect (N * b) = (p.reflect b) ^ N := by
+  induction N with
+  | zero => simp [Polynomial.reflect_one]
+  | succ N ih =>
+    rw [pow_succ, Nat.succ_mul,
+      Polynomial.reflect_mul _ _ (Polynomial.natDegree_pow_le_of_le N hp) hp, ih, pow_succ]
+
+theorem polynomialEuler_natDegree_le {B : Type*} [Semiring B] (p : Polynomial B) :
+    (TailSeries.polynomialEuler p).natDegree ≤ p.natDegree := by
+  apply Polynomial.natDegree_le_iff_coeff_eq_zero.mpr
+  intro i hi
+  rw [TailSeries.coeff_polynomialEuler, Polynomial.coeff_eq_zero_of_natDegree_lt hi, smul_zero]
+
+/-- Reversing polynomial Euler differentiation gives the shifted Euler operator. -/
+theorem reflectedEuler {B : Type*} [Ring B] (b : ℕ) (p : Polynomial B)
+    (hp : p.natDegree ≤ b) :
+    ((TailSeries.polynomialEuler p).reflect b : PowerSeries B) =
+      CoefficientSeries.shiftedEuler (b : ℤ) (p.reflect b) := by
+  ext i
+  simp only [Polynomial.coeff_coe, Polynomial.coeff_reflect, TailSeries.coeff_polynomialEuler,
+    CoefficientSeries.coeff_shiftedEuler]
+  by_cases hi : i ≤ b
+  · rw [Polynomial.revAt_le hi, ← Nat.cast_sub hi, natCast_zsmul]
+  · have hz : p.coeff i = 0 :=
+      Polynomial.coeff_eq_zero_of_natDegree_lt (hp.trans_lt (Nat.lt_of_not_ge hi))
+    rw [Polynomial.revAt_eq_self_of_lt (Nat.lt_of_not_ge hi), hz, smul_zero, smul_zero]
+
+theorem scalarE_natDegree_le (r : ℕ) : (TailSeries.scalarE r).natDegree ≤ r :=
+  Polynomial.natDegree_map_le.trans (E_natDegree_le r)
+
+private theorem reflect_nsmul {B : Type*} [Semiring B] (p : Polynomial B) (b n : ℕ) :
+    (n • p).reflect b = n • p.reflect b := by
+  ext i
+  simp [Polynomial.coeff_reflect]
+
+private theorem coe_nsmul {B : Type*} [Semiring B] (p : Polynomial B) (n : ℕ) :
+    (n • p : Polynomial B) = n • (p : PowerSeries B) := by
+  exact (Polynomial.coeToPowerSeries.ringHom.map_nsmul n p)
+
+private theorem coe_sub_noncomm {B : Type*} [Ring B] (p q : Polynomial B) :
+    (p - q : Polynomial B) = (p : PowerSeries B) - (q : PowerSeries B) := by
+  ext i
+  simp only [Polynomial.coeff_coe, map_sub, Polynomial.coeff_sub]
+
+/-- Reflection of the literal Euler expression uses the sum of the two upper bounds. -/
+theorem reflected_polynomialOperator (N r b : ℕ) (Y : Polynomial (CoefficientComplex.A r))
+    (hY : Y.natDegree ≤ b) :
+    ((TailSeries.polynomialOperator N r Y).reflect (r + b) : PowerSeries (CoefficientComplex.A r)) =
+      ((TailSeries.scalarE r).reflect r : PowerSeries (CoefficientComplex.A r)) *
+        CoefficientSeries.shiftedEuler (b : ℤ) (Y.reflect b : PowerSeries (CoefficientComplex.A r)) -
+      N • (CoefficientSeries.shiftedEuler (r : ℤ) ((TailSeries.scalarE r).reflect r : PowerSeries (CoefficientComplex.A r)) *
+        (Y.reflect b : PowerSeries (CoefficientComplex.A r))) := by
+  rw [TailSeries.polynomialOperator, Polynomial.reflect_sub, reflect_nsmul,
+    Polynomial.reflect_mul _ _ (scalarE_natDegree_le r) ((polynomialEuler_natDegree_le Y).trans hY),
+    Polynomial.reflect_mul _ _ ((polynomialEuler_natDegree_le _).trans (scalarE_natDegree_le r)) hY]
+  simp only [coe_sub_noncomm, coe_nsmul, Polynomial.coe_mul,
+    reflectedEuler _ _ hY, reflectedEuler _ _ (scalarE_natDegree_le r)]
+
+theorem polynomialOperator_natDegree_le (N r b : ℕ) (Y : Polynomial (CoefficientComplex.A r))
+    (hY : Y.natDegree ≤ b) : (TailSeries.polynomialOperator N r Y).natDegree ≤ r + b := by
+  apply Polynomial.natDegree_le_iff_coeff_eq_zero.mpr
+  intro j hj
+  rw [TailSeries.coeff_polynomialOperator]
+  apply TailSeries.eulerOperator_support N r b Y.coeff
+  · intro k hk
+    exact Polynomial.coeff_eq_zero_of_natDegree_lt (hY.trans_lt hk)
+  · omega
 
 /-- The reversal of `E`, as a series in deficits from its top degree. -/
 def revE (r : ℕ) : PowerSeries (R r) := ((E r).reflect r : Polynomial (R r))

@@ -25,6 +25,6 @@ theorem cycles_generated_by_mu_mod_boundaries (n N : ℕ) (hN : 0 < N) :
   apply Reversal.cycleGeneration_of_tailGeneration N n hN (Nat.pos_of_ne_zero hn0)
   apply CoefficientComplex.tailGeneration_of_all_exceptionalTransfers N hN
   intro r ell hm
-  exact CoefficientComplex.exceptionalTransfers_of_continuation N r ell hN hm
+  exact CoefficientComplex.exceptionalTransfers N r ell hN hm
 
 end TorusLinkHomology
