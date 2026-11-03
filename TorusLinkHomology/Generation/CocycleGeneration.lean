@@ -1,13 +1,13 @@
 import TorusLinkHomology.Generation.AuxiliaryInduction
 import TorusLinkHomology.Generation.ReversedGenerators
-import TorusLinkHomology.Generation.ExceptionalTransfers
+import TorusLinkHomology.Generation.ChainIdentity
 
 /-!
 # Generation of coefficient Koszul homology
 
 This supporting cocycle theorem supplies representatives for the public
 DGA homology-generation theorem. The proof uses coefficient reversal, auxiliary induction,
-and the universal exceptional-transfer identity.
+and the chain identity for exceptional products.
 -/
 
 namespace TorusLinkHomology

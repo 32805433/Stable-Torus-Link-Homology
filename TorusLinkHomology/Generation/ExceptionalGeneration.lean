@@ -1,5 +1,5 @@
 import TorusLinkHomology.Generation.ComparisonGeneration
-import TorusLinkHomology.Generation.ComparisonExplicit
+import TorusLinkHomology.Generation.Connecting
 
 /-!
 # Reduction to ordered squarefree exceptional products

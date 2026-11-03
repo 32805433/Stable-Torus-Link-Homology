@@ -119,23 +119,4 @@ theorem coeff_evalEuler_eq_zero (p : Polynomial K) (b : ℤ) (f : PowerSeries A)
 
 end Ring
 
-section CoefficientMaps
-
-variable {B : Type*} [Ring A] [Ring B]
-
-/-- Apply an additive map coefficientwise; in particular this extends a differential. -/
-def mapCoefficients (F : A →+ B) (f : PowerSeries A) : PowerSeries B :=
-  PowerSeries.mk fun n => F (f.coeff n)
-
-@[simp] theorem coeff_mapCoefficients (F : A →+ B) (f : PowerSeries A) (n : ℕ) :
-    (mapCoefficients F f).coeff n = F (f.coeff n) :=
-  PowerSeries.coeff_mk _ _
-
-theorem mapCoefficients_shiftedEuler (F : A →+ B) (b : ℤ) (f : PowerSeries A) :
-    mapCoefficients F (shiftedEuler b f) = shiftedEuler b (mapCoefficients F f) := by
-  ext n
-  simp only [coeff_mapCoefficients, coeff_shiftedEuler, map_zsmul]
-
-end CoefficientMaps
-
 end TorusLinkHomology.CoefficientSeries

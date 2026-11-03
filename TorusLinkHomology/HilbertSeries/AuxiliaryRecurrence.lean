@@ -1,5 +1,5 @@
 import TorusLinkHomology.Generation.AuxiliaryInduction
-import TorusLinkHomology.Generation.ExceptionalTransfers
+import TorusLinkHomology.Generation.ChainIdentity
 import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-! Representative-level short exactness for the auxiliary homology recurrence.

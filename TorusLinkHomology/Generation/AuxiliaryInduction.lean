@@ -7,7 +7,7 @@ import TorusLinkHomology.Generation.AuxiliaryZeroOffset
 Strong induction on rank plus offset uses the coordinate-Koszul offset-zero
 calculation and the vanishing of coefficients above the polynomial degree.
 The interior step uses the finite exceptional-product transfer statement,
-proved independently in `ExceptionalTransfers`.
+proved independently in `ChainIdentity`.
 -/
 
 namespace TorusLinkHomology.CoefficientComplex
